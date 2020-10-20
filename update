@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#Check for root privilages
+echo "You will need root privileges."
+echo "You are currently $(whoami)"
+[ "$UID" -eq 0 ] || exec sudo "$0" "$@"
+
+#Check for news
+echo "Checking for news from Arch linux using informant..."
+informant read
+echo "Done checking for news..."
+
+#Continue?
+while true; do
+    read -p "Do you wish to make a snapshot & continue with the upgrade?" yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+#Stamp it!
+TIMESTAMP=`date +"%Y-%m-%d-%H%M%S"`
+
+#Create snapshot
+btrfs subvolume snapshot -r / /.snapshots/$TIMESTAMP
+
+#Upgrade using pacman
+pacman --noconfirm -Syyuu
+
+#Update GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
