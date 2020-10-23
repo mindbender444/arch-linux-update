@@ -13,6 +13,20 @@ yay_f() {
     exit
 } 
 
+make_snap() {
+	
+	#Stamp it!
+	TIMESTAMP=`date +"%Y-%m-%d-%H%M%S"`
+
+	#Create snapshot
+	echo "Creating snapshot..."
+	sudo btrfs subvolume snapshot -r / /.snapshots/$TIMESTAMP
+
+	#Update GRUB
+	echo "Updating GRUB..."
+	sudo grub-mkconfig -o /boot/grub/grub.cfg
+}
+
 ##END OF FUNCTIONS##
 
 #Check for news if informant is installed
@@ -22,26 +36,25 @@ sudo informant read
 echo "Done checking for news..."
 fi
 
-#Continue?
+#Snapshot?
 while true; do
-    read -p "Do you wish to make a snapshot & continue with the upgrade?" yn
+    read -p "Do you want to make a snapshot?" yn
+    case $yn in
+        [Yy]* ) make_snap && break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+#Snapshot?
+while true; do
+    read -p "Do you want to continue with the upgrade?" yn
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
 done
-
-#Stamp it!
-TIMESTAMP=`date +"%Y-%m-%d-%H%M%S"`
-
-#Create snapshot
-echo "Creating snapshot..."
-sudo btrfs subvolume snapshot -r / /.snapshots/$TIMESTAMP
-
-#Update GRUB
-echo "Updating GRUB..."
-sudo grub-mkconfig -o /boot/grub/grub.cfg
 
 #Upgrade with...?
 PS3="Select option: "
