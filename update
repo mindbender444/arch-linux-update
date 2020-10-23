@@ -1,14 +1,24 @@
 #!/bin/bash
 
-#Check for root privilages
-echo "You will need root privileges."
-echo "You are currently $(whoami)"
-[ "$UID" -eq 0 ] || exec sudo "$0" "$@"
+## FUNCTIONS ##
+#Upgrade using pacman
+pacman_f() { 
+    sudo pacman -Syu
+} 
 
-#Check for news
+#Upgrade using yay
+yay_f() { 
+    yay -Syu
+} 
+
+##END OF FUNCTIONS##
+
+#Check for news if informant is installed
+if which informant > /dev/null; then
 echo "Checking for news from Arch linux using informant..."
-informant read
+sudo informant read
 echo "Done checking for news..."
+fi
 
 #Continue?
 while true; do
@@ -24,10 +34,28 @@ done
 TIMESTAMP=`date +"%Y-%m-%d-%H%M%S"`
 
 #Create snapshot
-btrfs subvolume snapshot -r / /.snapshots/$TIMESTAMP
+sudo btrfs subvolume snapshot -r / /.snapshots/$TIMESTAMP
 
-#Upgrade using pacman
-pacman --noconfirm -Syyuu
+#Upgrade with...?
+PS3="Select option: "
+
+select opt in pacman yay quit; do
+
+  case $opt in
+    pacman)
+	pacman_f
+      ;;
+    yay)
+	yay_f
+      ;;
+    quit)
+      	break
+      ;;
+    *) 
+      echo "Invalid option $REPLY"
+      ;;
+  esac
+done
 
 #Update GRUB
-grub-mkconfig -o /boot/grub/grub.cfg
+sudo grub-mkconfig -o /boot/grub/grub.cfg
