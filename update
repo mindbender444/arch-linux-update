@@ -4,13 +4,13 @@
 #Upgrade using pacman
 pacman_f() { 
     sudo pacman -Syu
-    break
+    exit
 } 
 
 #Upgrade using yay
 yay_f() { 
     yay -Syu
-    break
+    exit
 } 
 
 ##END OF FUNCTIONS##
