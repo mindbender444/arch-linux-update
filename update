@@ -4,11 +4,13 @@
 #Upgrade using pacman
 pacman_f() { 
     sudo pacman -Syu
+    break
 } 
 
 #Upgrade using yay
 yay_f() { 
     yay -Syu
+    break
 } 
 
 ##END OF FUNCTIONS##
@@ -34,7 +36,12 @@ done
 TIMESTAMP=`date +"%Y-%m-%d-%H%M%S"`
 
 #Create snapshot
+echo "Creating snapshot..."
 sudo btrfs subvolume snapshot -r / /.snapshots/$TIMESTAMP
+
+#Update GRUB
+echo "Updating GRUB..."
+sudo grub-mkconfig -o /boot/grub/grub.cfg
 
 #Upgrade with...?
 PS3="Select option: "
@@ -56,6 +63,3 @@ select opt in pacman yay quit; do
       ;;
   esac
 done
-
-#Update GRUB
-sudo grub-mkconfig -o /boot/grub/grub.cfg
