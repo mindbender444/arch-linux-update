@@ -4,13 +4,13 @@
 #Upgrade using pacman
 pacman_f() { 
     sudo pacman -Syu
-    exit
+    update_grub
 } 
 
 #Upgrade using yay
 yay_f() { 
     yay -Syu
-    exit
+    update_grub
 } 
 
 make_snap() {
@@ -27,52 +27,96 @@ make_snap() {
 	sudo grub-mkconfig -o /boot/grub/grub.cfg
 }
 
-##END OF FUNCTIONS##
+update_grub() {
 
-#Check for news if informant is installed
-if which informant > /dev/null; then
-echo "Checking for news from Arch linux using informant..."
-sudo informant read
-echo "Done checking for news..."
-fi
+	#Update GRUB"
+	echo "Updating GRUB..."
+	sudo grub-mkconfig -o /boot/grub/grub.cfg
+}
 
-#Snapshot?
-while true; do
-    read -p "Do you want to make a snapshot?" yn
-    case $yn in
-        [Yy]* ) make_snap && break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
+news_check() {
+    #Check for news if informant is installed
+    if which informant > /dev/null; then
+        echo "Checking for news from Arch Linux using informant..."
+        sudo informant read
+        echo "Done checking for news..."
+        else
+        echo "Informant not found. Skipping news check."
+    fi
+}
 
-#Snapshot?
-while true; do
-    read -p "Do you want to continue with the upgrade?" yn
+snapshotting() {
+    #Snapshot if no snapper?
+    if which snapper > /dev/null; then
+        echo "Snapper is installed. Will rely on snapper for snapshotting."
+        
+    else 
+        while true; do    
+            echo "Snapper not found for automatic snapshots"
+            read -p "Do you want to use this script to make a snapshot?" yn
+            case $yn in
+            [Yy]* ) make_snap && break;;
+            [Nn]* ) break;;
+            * ) echo "Please answer yes or no.";;
+            esac
+        done
+    fi
+}    
+
+continue_check() {
+    while true; do
+    read -p "Do you want to continue?" yn
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
-done
+    done
 
-#Upgrade with...?
-PS3="Select option: "
+}
+yay_or_pacman() {
+    #Upgrade with...?
+    PS3="Select option: "
 
-select opt in pacman yay quit; do
-
-  case $opt in
-    pacman)
-	pacman_f
-      ;;
-    yay)
-	yay_f
-      ;;
-    quit)
+    select opt in pacman yay quit; do
+        case $opt in
+        pacman)
+        pacman_f
+        break
+        ;;
+        yay)
+        yay_f
+        break
+        ;;
+        quit)
       	break
-      ;;
-    *) 
-      echo "Invalid option $REPLY"
-      ;;
-  esac
-done
+        ;;
+        *) 
+        echo "Invalid option $REPLY"
+        ;;
+        esac
+    done
+}
+##END OF FUNCTIONS##
+
+#Check for news
+news_check
+
+#Do a snapshot if snapper isn't installed
+snapshotting
+
+#Upgrade?
+echo "Ready to upgrade system."
+continue_check
+
+#If yay is installed you can choose pacman or yay to update with
+if which yay > /dev/null; then
+    echo "Yay is detected. You can choose pacman or yay to update with."
+    yay_or_pacman
+else
+    echo "Yay was not detected. Will continue update with pacman."
+    pacman_f
+fi    
+
+echo "Update procedure has completed."
+exit
